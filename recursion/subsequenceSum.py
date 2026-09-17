@@ -36,3 +36,21 @@ def oneSubsequence(i: int, arr: list[int], nums: list[int], sum: int, target: in
 
 print('\nAnswer for only 1 subsequence: ')
 oneSubsequence(0, [], [1,2,1], 0, 2)
+
+def numberOfSequences(i: int, nums, sum, target)->int:
+    if i==len(nums):
+        if sum==target:
+            return 1
+        return 0
+
+    sum+=nums[i]
+    left = numberOfSequences(i+1, nums, sum, target)
+
+    sum-=nums[i]
+    right = numberOfSequences(i+1, nums, sum, target)
+
+    return left + right
+
+print('\nTotal number of subsequence: ', numberOfSequences(0, [1,2,1], 0, 2))
+
+    
