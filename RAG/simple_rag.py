@@ -1,5 +1,6 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 # loading embedding model
 
@@ -45,3 +46,15 @@ bestMatchIndex=scores.argmax()
 
 print("\n Best match : ")
 print(documents[bestMatchIndex])
+print('documentEmbeddings.shape', documentEmbeddings.shape)
+query_embedding = embeddingModel.encode([query])
+print('query_embedding.shape', query_embedding.shape)
+
+top_k=3 # top k documents
+
+top_indices = np.argsort(scores)[::-1][:top_k]
+
+print("\n Top results:")
+
+for index in top_indices:
+    print(f"{scores[index]:.4f}->{documents[index]}")
