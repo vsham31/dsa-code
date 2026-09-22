@@ -58,3 +58,5 @@ print("\n Top results:")
 
 for index in top_indices:
     print(f"{scores[index]:.4f}->{documents[index]}")
+
+    
