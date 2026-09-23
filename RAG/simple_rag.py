@@ -1,6 +1,14 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from google import genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+gemini_model_name = os.getenv('GEMINI_MODEL_NAME')
+gemini_key=os.getenv("GEMINI_API_KEY")
 
 # loading embedding model
 
@@ -56,7 +64,40 @@ top_indices = np.argsort(scores)[::-1][:top_k]
 
 print("\n Top results:")
 
+retreived_documents = []
+
 for index in top_indices:
+    retreived_documents.append(documents[index])
     print(f"{scores[index]:.4f}->{documents[index]}")
 
-    
+# -------------------------
+# 5. Build RAG context
+# -------------------------
+
+context = "\n".join(retreived_documents)
+
+prompt = f"""
+Answer the question only using provided context.
+
+Context:
+{context}
+
+Question:
+{query}
+
+Answer:
+"""
+
+# -------------------------
+# 6. Call LLM
+# -------------------------
+
+client = genai.Client(api_key=gemini_key)
+
+response = client.models.generate_content(
+    model=gemini_model_name or '',
+    contents=prompt,
+)
+
+print("\nLLM Answer: ")
+print(response.text)
