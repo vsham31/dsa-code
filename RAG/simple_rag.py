@@ -9,10 +9,11 @@ load_dotenv()
 
 gemini_model_name = os.getenv('GEMINI_MODEL_NAME')
 gemini_key=os.getenv("GEMINI_API_KEY")
+embedding_model_name=os.getenv("EMBEDDING_MODEL")
 
 # loading embedding model
 
-embeddingModel = SentenceTransformer("all-MiniLM-L6-v2")
+embeddingModel = SentenceTransformer(embedding_model_name)
 
 # knowledge base
 
@@ -30,7 +31,9 @@ documentEmbeddings = embeddingModel.encode(documents)
 
 # question of user
 
-query = "Which technology is used to manage containers?"
+# query = "Which technology is used to manage containers?"
+
+query = input("Ask a question: ")
 
 # make embeddings of query
 
@@ -77,7 +80,12 @@ for index in top_indices:
 context = "\n".join(retreived_documents)
 
 prompt = f"""
-Answer the question only using provided context.
+You are a helpful assistant.
+
+Answer the question using only the provided context.
+
+If the answer is not available in the context,
+say "I don't know based on the provided context."
 
 Context:
 {context}
