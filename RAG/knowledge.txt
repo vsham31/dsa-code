@@ -1,0 +1,6 @@
+Kubernetes is an open-source container orchestration platform.
+It is used to automate deployment, scaling, and management of containerized applications.
+Docker is used to package applications and their dependencies into containers.
+PostgreSQL is a relational database management system.
+Redis is an in-memory data store commonly used for caching and fast lookups.
+FastAPI is a modern Python framework for building APIs.

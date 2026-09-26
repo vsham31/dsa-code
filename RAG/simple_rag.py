@@ -16,18 +16,54 @@ embedding_model_name=os.getenv("EMBEDDING_MODEL")
 embeddingModel = SentenceTransformer(embedding_model_name)
 
 # knowledge base
+# Resolve this file relative to the script, rather than the shell's current
+# working directory, so `python3 RAG/simple_rag.py` works from the repo root.
+# knowledge_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "knowledge.txt")
 
-documents = [
-    "Python is a dynamically typed programming language.",
-    "PostgreSQL is a relational database management system.",
-    "Docker packages applications and their dependencies into containers.",
-    "Kubernetes is used to orchestrate and manage containers.",
-    "Redis is an in-memory data store commonly used for caching."
-]
+with open("/home/extinct/Downloads/dsa code/RAG/knowledge.txt", "r", encoding="utf-8") as file:
+    text = file.read()
+
+print("Original text: ")
+print(text)
+
+# chunking
+
+def create_chunks(text, chunk_size=120, overlap=20):
+    chunks=[]
+    start=0
+
+    while start<len(text):
+        end=start+chunk_size
+        chunk=text[start:end]
+        chunks.append(chunk)
+        start=end-overlap
+    return chunks
+
+chunks=create_chunks(
+    text=text,
+    chunk_size=120,
+    overlap=20,
+)
+
+print("\nChunks:")
+
+for i, chunk in enumerate(chunks):
+    print(f"\nChunk {i}: ")
+    print(chunk)
+
+
+
+# documents = [
+#     "Python is a dynamically typed programming language.",
+#     "PostgreSQL is a relational database management system.",
+#     "Docker packages applications and their dependencies into containers.",
+#     "Kubernetes is used to orchestrate and manage containers.",
+#     "Redis is an in-memory data store commonly used for caching."
+# ]
 
 # convert documents into embeddings
 
-documentEmbeddings = embeddingModel.encode(documents)
+documentEmbeddings = embeddingModel.encode(chunks)
 
 # question of user
 
@@ -48,7 +84,7 @@ scores = cosine_similarity(
 
 # print the scores
 
-for document, score in zip(documents, scores):
+for document, score in zip(chunks, scores):
     print(f"{score: .4f} -> {document}")
 
 # find most similar documents
@@ -56,7 +92,7 @@ for document, score in zip(documents, scores):
 bestMatchIndex=scores.argmax()
 
 print("\n Best match : ")
-print(documents[bestMatchIndex])
+print(chunks[bestMatchIndex])
 print('documentEmbeddings.shape', documentEmbeddings.shape)
 query_embedding = embeddingModel.encode([query])
 print('query_embedding.shape', query_embedding.shape)
@@ -70,8 +106,8 @@ print("\n Top results:")
 retreived_documents = []
 
 for index in top_indices:
-    retreived_documents.append(documents[index])
-    print(f"{scores[index]:.4f}->{documents[index]}")
+    retreived_documents.append(chunks[index])
+    print(f"{scores[index]:.4f}->{chunks[index]}")
 
 # -------------------------
 # 5. Build RAG context
