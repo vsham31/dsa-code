@@ -145,3 +145,6 @@ response = client.models.generate_content(
 
 print("\nLLM Answer: ")
 print(response.text)
+
+
+# new implementation of rag
