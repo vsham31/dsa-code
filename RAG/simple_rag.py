@@ -148,3 +148,5 @@ print(response.text)
 
 
 # new implementation of rag
+
+# with the top k retreival from documents instead of array
