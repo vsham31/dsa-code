@@ -18,9 +18,13 @@ embeddingModel = SentenceTransformer(embedding_model_name)
 # knowledge base
 # Resolve this file relative to the script, rather than the shell's current
 # working directory, so `python3 RAG/simple_rag.py` works from the repo root.
-# knowledge_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "knowledge.txt")
+knowledge_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "knowledge.txt")
 
-with open("/home/extinct/Downloads/dsa code/RAG/knowledge.txt", "r", encoding="utf-8") as file:
+# with open("/home/extinct/Downloads/dsa-code/RAG/knowledge.txt", "r", encoding="utf-8") as file:
+#     text = file.read()
+
+
+with open(knowledge_path, "r", encoding="utf-8") as file:
     text = file.read()
 
 print("Original text: ")
