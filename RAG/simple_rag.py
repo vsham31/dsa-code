@@ -149,7 +149,7 @@ from google.genai import errors as genai_errors
 fallback_model_name = os.getenv("GEMINI_FALLBACK_MODEL_NAME")
 
 
-def generate_with_retry(prompt, models, max_retries=5):
+def generate_with_retry(prompt, models, max_retries=3):
     """Retry on transient 429/500/503/504 errors with exponential backoff,
     then fall through to the next model in `models`."""
     last_error = None
@@ -164,7 +164,7 @@ def generate_with_retry(prompt, models, max_retries=5):
                     raise
                 print(f"[{model}] {e.code} on attempt {attempt}/{max_retries}; retrying in {delay}s...")
                 time.sleep(delay)
-                delay = min(delay * 2, 30)
+                # delay = min(delay * 2, 30)
         print(f"[{model}] still unavailable, trying next model (if any).")
     raise last_error
 
