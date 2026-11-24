@@ -142,10 +142,35 @@ Answer:
 
 client = genai.Client(api_key=gemini_key)
 
-response = client.models.generate_content(
-    model=gemini_model_name or '',
-    contents=prompt,
-)
+import time
+from google.genai import errors as genai_errors
+
+# Optional fallback model, e.g. GEMINI_FALLBACK_MODEL_NAME=gemini-2.0-flash
+fallback_model_name = os.getenv("GEMINI_FALLBACK_MODEL_NAME")
+
+
+def generate_with_retry(prompt, models, max_retries=5):
+    """Retry on transient 429/500/503/504 errors with exponential backoff,
+    then fall through to the next model in `models`."""
+    last_error = None
+    for model in models:
+        delay = 2
+        for attempt in range(1, max_retries + 1):
+            try:
+                return client.models.generate_content(model=model, contents=prompt)
+            except genai_errors.APIError as e:
+                last_error = e
+                if e.code not in (429, 500, 503, 504):
+                    raise
+                print(f"[{model}] {e.code} on attempt {attempt}/{max_retries}; retrying in {delay}s...")
+                time.sleep(delay)
+                delay = min(delay * 2, 30)
+        print(f"[{model}] still unavailable, trying next model (if any).")
+    raise last_error
+
+
+models_to_try = [m for m in (gemini_model_name, fallback_model_name) if m]
+response = generate_with_retry(prompt, models_to_try)
 
 print("\nLLM Answer: ")
 print(response.text)
