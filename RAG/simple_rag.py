@@ -1,14 +1,17 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from google import genai
 import os
 from dotenv import load_dotenv
 
+from paragraph_chunks import create_paragraph_chunks
+
 load_dotenv()
 
-gemini_model_name = os.getenv('GEMINI_MODEL_NAME')
-gemini_key=os.getenv("GEMINI_API_KEY")
+groq_key = os.getenv("GROQ_API_KEY")
+groq_model_name = os.getenv("GROQ_MODEL_NAME", "openai/gpt-oss-120b")
+# Optional fallback, e.g. GROQ_FALLBACK_MODEL_NAME=openai/gpt-oss-20b
+groq_fallback_model_name = os.getenv("GROQ_FALLBACK_MODEL_NAME", "openai/gpt-oss-20b")
 embedding_model_name=os.getenv("EMBEDDING_MODEL")
 
 # loading embedding model
@@ -32,6 +35,7 @@ print(text)
 
 # chunking
 
+# normal overlap chunking
 def create_chunks(text, chunk_size=120, overlap=20):
     chunks=[]
     start=0
@@ -43,11 +47,14 @@ def create_chunks(text, chunk_size=120, overlap=20):
         start=end-overlap
     return chunks
 
-chunks=create_chunks(
-    text=text,
-    chunk_size=120,
-    overlap=20,
-)
+# chunks=create_chunks(
+#     text=text,
+#     chunk_size=120,
+#     overlap=20,
+# )
+
+
+chunks=create_paragraph_chunks(text=text, max_chars=300)
 
 print("\nChunks:")
 
@@ -140,17 +147,19 @@ Answer:
 # 6. Call LLM
 # -------------------------
 
-client = genai.Client(api_key=gemini_key)
-
 import time
-from google.genai import errors as genai_errors
+from groq import Groq, APIStatusError, APIConnectionError
 
-# Optional fallback model, e.g. GEMINI_FALLBACK_MODEL_NAME=gemini-2.0-flash
-fallback_model_name = os.getenv("GEMINI_FALLBACK_MODEL_NAME")
+if not groq_key:
+    raise SystemExit("GROQ_API_KEY is not set. Add it to RAG/.env (get one at console.groq.com).")
+
+groq_client = Groq(api_key=groq_key)
+
+RETRYABLE = (429, 500, 502, 503, 504)
 
 
-def generate_with_retry(prompt, models, max_retries=1):
-    """Retry on transient 429/500/503/504 errors with exponential backoff,
+def generate_with_retry(prompt, models, max_retries=2):
+    """Call Groq, retrying transient errors with exponential backoff,
     then fall through to the next model in `models`."""
     last_error = None
     for model in models:
@@ -158,25 +167,34 @@ def generate_with_retry(prompt, models, max_retries=1):
         for attempt in range(1, max_retries + 1):
             try:
                 print("model: ", model)
-                return client.models.generate_content(model=model, contents=prompt)
-            except genai_errors.APIError as e:
+                resp = groq_client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0,
+                )
+                return resp.choices[0].message.content
+            except APIStatusError as e:
                 last_error = e
-                if e.code not in (429, 500, 503, 504):
+                if e.status_code not in RETRYABLE:
                     raise
-                print(f"[{model}] {e.code} on attempt {attempt}/{max_retries}; retrying in {delay}s...")
+                print(f"[{model}] {e.status_code} on attempt {attempt}/{max_retries}; retrying in {delay}s...")
+            except APIConnectionError as e:
+                last_error = e
+                print(f"[{model}] connection error on attempt {attempt}/{max_retries}; retrying in {delay}s...")
+            if attempt < max_retries:
                 time.sleep(delay)
-                # delay = min(delay * 2, 30)
+                delay = min(delay * 2, 30)
         print(f"[{model}] still unavailable, trying next model (if any).")
     raise last_error
 
 
-models_to_try = [m for m in (gemini_model_name, fallback_model_name) if m]
+models_to_try = [m for m in (groq_model_name, groq_fallback_model_name) if m]
 
 print("retry models: ", models_to_try)
-response = generate_with_retry(prompt, models_to_try)
+answer = generate_with_retry(prompt, models_to_try)
 
 print("\nLLM Answer: ")
-print(response.text)
+print(answer)
 
 
 # new implementation of rag
