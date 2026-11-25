@@ -1,4 +1,5 @@
 {
     "python.analysis.languageServerMode": "full",
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "python.terminal.useEnvFile": true
 }
