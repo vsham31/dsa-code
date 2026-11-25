@@ -149,7 +149,7 @@ from google.genai import errors as genai_errors
 fallback_model_name = os.getenv("GEMINI_FALLBACK_MODEL_NAME")
 
 
-def generate_with_retry(prompt, models, max_retries=3):
+def generate_with_retry(prompt, models, max_retries=1):
     """Retry on transient 429/500/503/504 errors with exponential backoff,
     then fall through to the next model in `models`."""
     last_error = None
@@ -157,6 +157,7 @@ def generate_with_retry(prompt, models, max_retries=3):
         delay = 2
         for attempt in range(1, max_retries + 1):
             try:
+                print("model: ", model)
                 return client.models.generate_content(model=model, contents=prompt)
             except genai_errors.APIError as e:
                 last_error = e
@@ -170,6 +171,8 @@ def generate_with_retry(prompt, models, max_retries=3):
 
 
 models_to_try = [m for m in (gemini_model_name, fallback_model_name) if m]
+
+print("retry models: ", models_to_try)
 response = generate_with_retry(prompt, models_to_try)
 
 print("\nLLM Answer: ")
