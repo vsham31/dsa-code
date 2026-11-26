@@ -59,7 +59,7 @@ def create_chunks(text, chunk_size=120, overlap=20):
 # )
 
 
-chunks=create_paragraph_chunks(text=text, max_chars=300)
+chunks=create_paragraph_chunks(text=text, max_chars=100)
 
 for i, chunk in enumerate(chunks):
     embedding = embeddingModel.encode(chunk).tolist()
@@ -104,9 +104,11 @@ queryEmbedding = embeddingModel.encode(query).tolist()
 
 # compare query & document vectors 
 
+top_k=3 # top k documents
+
 results=db.query(
     query_embeddings=[queryEmbedding],
-    n_results=3
+    n_results=top_k
 )
 
 # scores = cosine_similarity(
@@ -117,34 +119,21 @@ results=db.query(
 # print the scores
 
 retreived_documents=results["documents"][0]
+retreived_ids=results["ids"][0]
+retreived_distances=results["distances"][0]
 
-for chunk in retreived_documents:
-    print(chunk)
-
-# for document, score in zip(chunks, scores):
-#     print(f"{score: .4f} -> {document}")
-
-# find most similar documents
-
-# bestMatchIndex=scores.argmax()
+# Chroma returns results sorted best-first (lowest distance = most similar)
 
 print("\n Best match : ")
-# print(chunks[bestMatchIndex])
-# print('documentEmbeddings.shape', documentEmbeddings.shape)
-query_embedding = embeddingModel.encode([query])
-# print('query_embedding.shape', query_embedding.shape)
+print(f"id={retreived_ids[0]} distance={retreived_distances[0]:.4f}")
+print(retreived_documents[0])
 
-top_k=3 # top k documents
+print(f"\n Top {top_k} results:")
 
-# top_indices = np.argsort(scores)[::-1][:top_k]
-
-print("\n Top results:")
-
-# retreived_documents = []
-
-# for index in top_indices:
-#     retreived_documents.append(chunks[index])
-#     print(f"{scores[index]:.4f}->{chunks[index]}")
+for rank, (chunk_id, distance, chunk) in enumerate(
+    zip(retreived_ids, retreived_distances, retreived_documents), start=1
+):
+    print(f"{rank}. id={chunk_id} distance={distance:.4f} -> {chunk}")
 
 # -------------------------
 # 5. Build RAG context
