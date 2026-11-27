@@ -5,3 +5,6 @@ PostgreSQL is a relational database management system.
 Redis is an in-memory data store commonly used for caching and fast lookups.
 FastAPI is a modern Python framework for building APIs.
 This is a new sentence. Also this is other sentence. This sentence may be more than on hundred charatcters.
+Python is a high-level, dynamically typed programming language.
+
+LangChain is a framework for developing applications powered by language models. It provides integrations for LLMs, retrievers, vector databases, and document loaders.
